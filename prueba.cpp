@@ -7,13 +7,17 @@
 
 
 struct Producto {
-    int sku;
+    double sku;
     std::string nombre;
-    int monto;
-    int descuento;
+    double monto;
+    double descuento;
     std::string fecha;
     std::string estado;
 };
+
+bool cumpleCondicionEstado(const std::string& estado) {
+    return estado == "AUTHORIZED" || estado == "FINALIZED";
+}
 
 std::vector<Producto> procesarArchivo(std::ifstream& file) {
     std::vector<Producto> productos; // Vector de productos
@@ -27,7 +31,7 @@ std::vector<Producto> procesarArchivo(std::ifstream& file) {
     std::string line;
     std::getline(file, line); // Descartar la primera línea
 
-    while (std::getline(file, line) && productosLeidos < 20) {
+    while (std::getline(file, line) && productosLeidos < 200) {
         std::stringstream ss(line);
         std::string field;
 
@@ -43,15 +47,18 @@ std::vector<Producto> procesarArchivo(std::ifstream& file) {
             valores[i] = field;
         }
 
-        producto.sku = std::stoi(valores[0]);
+        producto.sku = std::stod(valores[0]);
         producto.nombre = valores[1];
-        producto.monto = std::stoi(valores[2]);
-        producto.descuento = std::stoi(valores[3]);
+        producto.monto = std::stod(valores[2]);
+        producto.descuento = std::stod(valores[3]);
         producto.fecha = valores[4];
         producto.estado = valores[5];
 
-        // Agregar el producto al vector
-        productos.push_back(producto);
+        // Verificar si cumple con la condición del estado
+        if (cumpleCondicionEstado(producto.estado)) {
+            // Agregar el producto al vector solo si cumple la condición
+            productos.push_back(producto);
+        }
 
         productosLeidos++;
     }
