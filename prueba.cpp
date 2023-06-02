@@ -109,11 +109,30 @@ std::vector<std::vector<Producto>> procesarArchivo(std::ifstream& file) {
     return productosPorMes;
 }
 
+double anualIpc(const std::vector<double>& mesipc) {
+    double finalipc = 0;
+    for (int i = 0; i < 11; i++) {
+        finalipc += mesipc[i];
+    }
+    return finalipc / 11;
+}
+
+double ipcUpDwn(const std::vector<Producto>& ProdMes) {
+    double ipc = 0, mul;
+    for (int i = 0; i < ProdMes.size(); i++) {
+        mul = (std::stoi(ProdMes[i].monto) + std::stoi(ProdMes[i].descuento)) * ProdMes[i].cantidad;
+        ipc += mul;
+    }
+    return ipc;
+}
+
 int main() {
     std::ifstream file("C:\\Users\\Jean\\Desktop\\Repositories\\c++\\prueba2.csv");
     std::vector<std::vector<Producto>> productosPorMes = procesarArchivo(file);
 
-    for (int i = 0; i < productosPorMes.size(); i++) {
+    std::vector<double> ipc(11);
+
+    /* for (int i = 0; i < productosPorMes.size(); i++) {
         std::system("pause");
         std::system("cls");
         std::cout << "Mes " << (i + 1) << ":" << std::endl;
@@ -136,9 +155,17 @@ int main() {
         }
 
         std::cout << std::endl;
-    }
+    } */
 
     std::cout << vectorMenorLargo(productosPorMes).size() << std::endl;
+
+    for (int i = 1; i < 11; i++) {
+        ipc[i - 1] = ipcUpDwn(productosPorMes[i]) / ipcUpDwn(productosPorMes[i - 1]);
+    }
+
+    double ipcFinal = anualIpc(ipc);
+
+     std::cout << "IPC anual: " << ipcFinal << std::endl;
 
     return 0;
 }
