@@ -141,36 +141,37 @@ double valorPonderado(const std::vector<Producto>& ProdMes) {
 std::vector<double> calcularIPC(const std::vector<std::vector<Producto>>& productosPorMes) {
     std::vector<double> ipcPorMes;
 
+    if (productosPorMes.size() < 2) {
+        std::cout << "No hay suficientes meses para calcular el IPC." << std::endl;
+        return ipcPorMes;
+    }
+
     double ipcTotal = 0.0;
 
     for (int i = 1; i < productosPorMes.size(); i++) {
         double ipcMes = valorPonderado(productosPorMes[i]);
         double ipcBase = valorPonderado(productosPorMes[i-1]);
 
-        double ipcRelativo = ((ipcMes / ipcBase)) * 100.0;
+        double ipcRelativo = (((ipcMes / ipcBase)) * 100.0)-100;
         ipcPorMes.push_back(ipcRelativo);
-    }
-
-    std::cout << "IPC por mes:" << std::endl;
-    for (int i = 0; i < ipcPorMes.size(); i++) {
-        std::cout << "Mes " << i + 2 << ": " << std::fixed << std::setprecision(4) << ipcPorMes[i] << " %" << std::endl;
     }
 
     return ipcPorMes;
 }
 
-void calcularDiferenciaIPC(const std::vector<double>& ipcPorMes) {
-    if (ipcPorMes.size() < 11) {
-        std::cout << "No se tienen suficientes meses para calcular la diferencia del IPC." << std::endl;
-        return;
+void inflacionAcumulada(const std::vector<double>& ipcPorMes) {
+    std::vector<double> inflacionAcumulada(ipcPorMes.size());
+
+    inflacionAcumulada[0] = ipcPorMes[0]; // La primera variación acumulada es igual a la primera variación mensual
+
+    for (int i = 1; i < ipcPorMes.size(); i++) {
+        inflacionAcumulada[i] = (1 + inflacionAcumulada[i - 1] / 100.0) * (1 + ipcPorMes[i] / 100.0) - 1;
     }
 
-    double ipcFebrero = std::abs(ipcPorMes[0]);
-    double ipcDiciembre = std::abs(ipcPorMes[ipcPorMes.size() - 1]);
-
-    double diferenciaIPC = ipcDiciembre - ipcFebrero;
-
-    std::cout << "Diferencia del IPC de febrero a diciembre: " << std::fixed << std::setprecision(4) << diferenciaIPC << " %" << std::endl;
+    std::cout << "Inflacion acumulada por mes:" << std::endl;
+    for (int i = 0; i < inflacionAcumulada.size(); i++) {
+        std::cout << "Mes " << i + 2 << ": " << std::fixed << std::setprecision(4) << inflacionAcumulada[i] << " %" << std::endl;
+    }
 }
 
 int main() {
@@ -178,34 +179,10 @@ int main() {
     std::vector<std::vector<Producto>> productosPorMes = procesarArchivo(file);
     productosPorMes = eliminarProductosNoPresentes(productosPorMes);
 
-    /* for (int i = 0; i < productosPorMes.size(); i++) {
-        std::system("pause");
-        std::system("cls");
-        std::cout << "Mes " << (i + 1) << ":" << std::endl;
-
-        const std::vector<Producto>& productosMes = productosPorMes[i];
-
-        if (productosMes.empty()) {
-            std::cout << "No hay productos en este mes." << std::endl;
-        } else {
-            for (const Producto& producto : productosMes) {
-                std::cout << "SKU: " << producto.sku << std::endl;
-                std::cout << "Nombre: " << producto.nombre << std::endl;
-                std::cout << "Monto: " << producto.monto << std::endl;
-                std::cout << "Descuento: " << producto.descuento << std::endl;
-                std::cout << "Fecha: " << producto.fecha << std::endl;
-                std::cout << "Estado: " << producto.estado << std::endl;
-                std::cout << "Cantidad: " << producto.cantidad << std::endl;
-                std::cout << std::endl;
-            }
-        }
-
-        std::cout << std::endl;
-    } */
-
     std::vector<double> ipcPorMes = calcularIPC(productosPorMes);
 
-    calcularDiferenciaIPC(ipcPorMes);
+    inflacionAcumulada(ipcPorMes);
+
 
     return 0;
 }
