@@ -27,6 +27,7 @@ std::vector<Producto> vectorMenorLargo(const std::vector<std::vector<Producto>>&
     vectorMenorLargo = productosPorMes[0];
 
     for (const auto& mes : productosPorMes) {
+        std::cout << " largo mes: "<< mes.size() << std::endl;
         if (mes.size() < vectorMenorLargo.size()) {
             vectorMenorLargo = mes;
         }
@@ -87,7 +88,18 @@ std::vector<std::vector<Producto>> procesarArchivo(std::ifstream& file) {
 
         if (cumpleCondicionEstado(producto.estado)) {
             auto& productosMes = productosPorMes[producto.fecha - 1];
-            productosMes.push_back(producto);
+            auto it = std::find_if(productosMes.begin(), productosMes.end(), [&](const Producto& p) {
+                return p.sku == producto.sku;
+            });
+
+            if (it == productosMes.end()) {
+                // Producto no encontrado, agregarlo al vector
+                producto.cantidad = 1;
+                productosMes.push_back(producto);
+            } else {
+                // Producto encontrado, incrementar la cantidad
+                it->cantidad++;
+            }
         }
 
     }
@@ -101,20 +113,29 @@ int main() {
     std::ifstream file("C:\\Users\\Jean\\Desktop\\Repositories\\c++\\prueba2.csv");
     std::vector<std::vector<Producto>> productosPorMes = procesarArchivo(file);
 
-    // Mostrar los vectores de SKU y su tamaño por cada mes
     for (int i = 0; i < productosPorMes.size(); i++) {
-        if (!productosPorMes[i].empty()) {
-            std::cout << "mes " << i + 1 << ": ";
+        std::system("pause");
+        std::system("cls");
+        std::cout << "Mes " << (i + 1) << ":" << std::endl;
 
-            /* // Mostrar los skus del mes actual
-            for (const Producto& producto : productosPorMes[i]) {
-                std::cout << producto.cantidad << " ";
-            } */
+        const std::vector<Producto>& productosMes = productosPorMes[i];
 
-            std::cout << "Tamaño del mes: " << productosPorMes[i].size() << " productos" << std::endl;
+        if (productosMes.empty()) {
+            std::cout << "No hay productos en este mes." << std::endl;
         } else {
-            std::cout << "No hay productos en el mes " << i + 1 << "." << std::endl;
+            for (const Producto& producto : productosMes) {
+                std::cout << "SKU: " << producto.sku << std::endl;
+                std::cout << "Nombre: " << producto.nombre << std::endl;
+                std::cout << "Monto: " << producto.monto << std::endl;
+                std::cout << "Descuento: " << producto.descuento << std::endl;
+                std::cout << "Fecha: " << producto.fecha << std::endl;
+                std::cout << "Estado: " << producto.estado << std::endl;
+                std::cout << "Cantidad: " << producto.cantidad << std::endl;
+                std::cout << std::endl;
+            }
         }
+
+        std::cout << std::endl;
     }
 
     std::cout << vectorMenorLargo(productosPorMes).size() << std::endl;
