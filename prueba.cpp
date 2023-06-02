@@ -4,6 +4,8 @@
 #include <string>
 #include <algorithm>
 #include <vector>
+#include <cmath>
+#include <iomanip>
 
 
 struct Producto {
@@ -109,28 +111,52 @@ std::vector<std::vector<Producto>> procesarArchivo(std::ifstream& file) {
     return productosPorMes;
 }
 
-double anualIpc(const std::vector<double>& mesipc) {
-    double finalipc = 0;
-    for (int i = 0; i < 11; i++) {
-        finalipc += mesipc[i];
+double valorPonderado(const std::vector<Producto>& ProdMes) {
+    double valorp = 0, mul;
+    for (int i = 0; i < ProdMes.size(); i++) {
+        mul = (std::stoi(ProdMes[i].monto) - std::stoi(ProdMes[i].descuento)) * ProdMes[i].cantidad;
+        valorp += mul;
     }
-    return finalipc / 11;
+    return valorp;
 }
 
-double ipcUpDwn(const std::vector<Producto>& ProdMes) {
-    double ipc = 0, mul;
-    for (int i = 0; i < ProdMes.size(); i++) {
-        mul = (std::stoi(ProdMes[i].monto) + std::stoi(ProdMes[i].descuento)) * ProdMes[i].cantidad;
-        ipc += mul;
+std::vector<double> calcularIPC(const std::vector<std::vector<Producto>>& productosPorMes) {
+    std::vector<double> ipcPorMes;
+
+    double ipcTotal = 0.0;
+    for (int i = 1; i < productosPorMes.size(); i++) {
+        double ipcMes = valorPonderado(productosPorMes[i]);
+        double ipcBase = valorPonderado(productosPorMes[i-1]);
+
+        double ipcRelativo = ((ipcMes / ipcBase)-1) * 100.0;
+        ipcPorMes.push_back(ipcRelativo);
     }
-    return ipc;
+
+    std::cout << "IPC por mes:" << std::endl;
+    for (int i = 0; i < ipcPorMes.size(); i++) {
+        std::cout << "Mes " << i + 2 << ": " << std::fixed << std::setprecision(4) << ipcPorMes[i] << " %" << std::endl;
+    }
+
+    return ipcPorMes;
+}
+
+double calcularInflacionAcumulada(const std::vector<double>& ipcPorMes) {
+    if (ipcPorMes.size() < 2) {
+        return 0.0; // Si no hay suficientes datos, la inflación acumulada es 0
+    }
+
+    double ipcInicial = std::abs(ipcPorMes[0]); // IPC de la posición inicial (enero)
+    double ipcFinal = std::abs(ipcPorMes.back()); // IPC de la última posición (diciembre)
+
+    // Calcular la inflación acumulada
+    double inflacionAcumulada = ((ipcFinal - ipcInicial) / ipcInicial) * 100.0;
+
+    return inflacionAcumulada;
 }
 
 int main() {
     std::ifstream file("C:\\Users\\Jean\\Desktop\\Repositories\\c++\\prueba2.csv");
     std::vector<std::vector<Producto>> productosPorMes = procesarArchivo(file);
-
-    std::vector<double> ipc(11);
 
     /* for (int i = 0; i < productosPorMes.size(); i++) {
         std::system("pause");
@@ -157,15 +183,8 @@ int main() {
         std::cout << std::endl;
     } */
 
-    std::cout << vectorMenorLargo(productosPorMes).size() << std::endl;
-
-    for (int i = 1; i < 11; i++) {
-        ipc[i - 1] = ipcUpDwn(productosPorMes[i]) / ipcUpDwn(productosPorMes[i - 1]);
-    }
-
-    double ipcFinal = anualIpc(ipc);
-
-     std::cout << "IPC anual: " << ipcFinal << std::endl;
+    std::vector<double> ipcPorMes = calcularIPC(productosPorMes);
+    std::cout << std::fixed << std::setprecision(4) << calcularInflacionAcumulada(ipcPorMes) << " %" << std::endl;
 
     return 0;
 }
