@@ -19,24 +19,28 @@ struct Producto {
     int cantidad = 0;
 };
 
-std::vector<Producto> vectorMenorLargo(const std::vector<std::vector<Producto>>& productosPorMes) {
-    std::vector<Producto> vectorMenorLargo;
+std::vector<std::string> obtenerCampos(std::stringstream& ss) {
+    std::vector<std::string> valores(6);
+    std::string field;
+    std::vector<std::string> campos = {"sku", "nombre", "monto", "descuento", "fecha", "estado"};
 
-    if (productosPorMes.empty()) {
-        std::cout << "El vector de productos por mes está vacío." << std::endl;
-        return vectorMenorLargo;
+    for (int i = 0; i < campos.size(); i++) {
+        std::getline(ss, field, ';');
+        field = field.substr(1, field.length() - 2);
+        valores[i] = field;
     }
 
-    vectorMenorLargo = productosPorMes[0];
+    return valores;
+}
 
-    for (const auto& mes : productosPorMes) {
-        std::cout << " largo mes: "<< mes.size() << std::endl;
-        if (mes.size() < vectorMenorLargo.size()) {
-            vectorMenorLargo = mes;
-        }
-    }
+bool cumpleCondicionEstado(const std::string& estado) {
+    return estado == "AUTHORIZED" || estado == "FINALIZED";
+}
 
-    return vectorMenorLargo;
+std::vector<Producto>::iterator buscarProducto(std::vector<Producto>& productosMes, const std::string& sku) {
+    return std::find_if(productosMes.begin(), productosMes.end(), [&](const Producto& p) {
+        return p.sku == sku;
+    });
 }
 
 int obtenerMes(const std::string& fechaUTC) {
@@ -52,10 +56,6 @@ int obtenerMes(const std::string& fechaUTC) {
     return mes;
 }
 
-bool cumpleCondicionEstado(const std::string& estado) {
-    return estado == "AUTHORIZED" || estado == "FINALIZED";
-}
-
 std::vector<std::vector<Producto>> procesarArchivo(std::ifstream& file) {
     std::vector<std::vector<Producto>> productosPorMes(12); // Vector de 12 vectores para los meses
 
@@ -69,19 +69,9 @@ std::vector<std::vector<Producto>> procesarArchivo(std::ifstream& file) {
 
     while (std::getline(file, line)) {
         std::stringstream ss(line);
-        std::string field;
+        std::vector<std::string> valores = obtenerCampos(ss);
 
         Producto producto;
-
-        std::vector<std::string> campos = {"sku", "nombre", "monto", "descuento", "fecha", "estado"};
-        std::vector<std::string> valores(6);
-
-        for (int i = 0; i < campos.size(); i++) {
-            std::getline(ss, field, ';');
-            field = field.substr(1, field.length() - 2);
-            valores[i] = field;
-        }
-
         producto.sku = valores[0];
         producto.nombre = valores[1];
         producto.monto = valores[2];
@@ -91,9 +81,7 @@ std::vector<std::vector<Producto>> procesarArchivo(std::ifstream& file) {
 
         if (cumpleCondicionEstado(producto.estado)) {
             auto& productosMes = productosPorMes[producto.fecha - 1];
-            auto it = std::find_if(productosMes.begin(), productosMes.end(), [&](const Producto& p) {
-                return p.sku == producto.sku;
-            });
+            auto it = buscarProducto(productosMes, producto.sku);
 
             if (it == productosMes.end()) {
                 // Producto no encontrado, agregarlo al vector
@@ -104,7 +92,6 @@ std::vector<std::vector<Producto>> procesarArchivo(std::ifstream& file) {
                 it->cantidad++;
             }
         }
-
     }
 
     file.close();
