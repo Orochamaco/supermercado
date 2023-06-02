@@ -13,7 +13,27 @@ struct Producto {
     std::string descuento;
     int fecha;
     std::string estado;
+    int cantidad = 0;
 };
+
+std::vector<Producto> vectorMenorLargo(const std::vector<std::vector<Producto>>& productosPorMes) {
+    std::vector<Producto> vectorMenorLargo;
+
+    if (productosPorMes.empty()) {
+        std::cout << "El vector de productos por mes está vacío." << std::endl;
+        return vectorMenorLargo;
+    }
+
+    vectorMenorLargo = productosPorMes[0];
+
+    for (const auto& mes : productosPorMes) {
+        if (mes.size() < vectorMenorLargo.size()) {
+            vectorMenorLargo = mes;
+        }
+    }
+
+    return vectorMenorLargo;
+}
 
 int obtenerMes(const std::string& fechaUTC) {
     std::istringstream iss(fechaUTC); // Crear un flujo de entrada a partir de la cadena
@@ -43,9 +63,7 @@ std::vector<std::vector<Producto>> procesarArchivo(std::ifstream& file) {
     std::string line;
     std::getline(file, line); // Descartar la primera línea
 
-    long int limit = 0;
-
-    while (std::getline(file, line) && limit < 4000000) {
+    while (std::getline(file, line)) {
         std::stringstream ss(line);
         std::string field;
 
@@ -69,16 +87,8 @@ std::vector<std::vector<Producto>> procesarArchivo(std::ifstream& file) {
 
         if (cumpleCondicionEstado(producto.estado)) {
             auto& productosMes = productosPorMes[producto.fecha - 1];
-            auto it = std::find_if(productosMes.begin(), productosMes.end(), [&](const Producto& p) {
-                return p.sku == producto.sku;
-            });
-
-            if (it == productosMes.end()) {
-                productosMes.push_back(producto);
-            }
+            productosMes.push_back(producto);
         }
-
-        limit++;
 
     }
 
@@ -88,7 +98,7 @@ std::vector<std::vector<Producto>> procesarArchivo(std::ifstream& file) {
 }
 
 int main() {
-    std::ifstream file("C:\\Users\\Jean\\Desktop\\Repositories\\c++\\archivo.csv");
+    std::ifstream file("C:\\Users\\Jean\\Desktop\\Repositories\\c++\\prueba2.csv");
     std::vector<std::vector<Producto>> productosPorMes = procesarArchivo(file);
 
     // Mostrar los vectores de SKU y su tamaño por cada mes
@@ -98,7 +108,7 @@ int main() {
 
             /* // Mostrar los skus del mes actual
             for (const Producto& producto : productosPorMes[i]) {
-                std::cout << producto.sku << " ";
+                std::cout << producto.cantidad << " ";
             } */
 
             std::cout << "Tamaño del mes: " << productosPorMes[i].size() << " productos" << std::endl;
@@ -106,6 +116,8 @@ int main() {
             std::cout << "No hay productos en el mes " << i + 1 << "." << std::endl;
         }
     }
+
+    std::cout << vectorMenorLargo(productosPorMes).size() << std::endl;
 
     return 0;
 }
